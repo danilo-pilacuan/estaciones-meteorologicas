@@ -4,11 +4,12 @@
       <div class="col-10">
         <!-- Instrucciones -->
         <div class="instructions-box q-mb-md">
+
           📍 <strong>Interacción con el mapa:</strong> Seleccione un marcador para ver la información detallada de la estación meteorológica.
         </div>
 
         <ol-map ref="map" :loadTilesWhileAnimating="true" :loadTilesWhileInteracting="true"
-          style="height: 600px; width: 100%;">
+          style="height: 700px; width: 100%;">
 
           <ol-view :center="center" :zoom="zoom" :projection="projection" ref="view" :maxZoom="18" /> <!-- Limitar el zoom máximo -->
 
@@ -121,12 +122,9 @@
     v-model="selectedVariable"
     :options="variablesSelectArray"
     label="Elija una opción"
-    filled
-    dense
-    emit-value
-    map-options
     @update:model-value="consultarMediciones"
   />
+
 </q-card-section>
 
 <q-separator />
@@ -140,7 +138,7 @@
         dense
         separator="horizontal"
         flat
-        :rows-per-page-options="[20, 30, 40]"
+        :rows-per-page-options="[10,20, 30, 40]"
 
       >
       <template v-slot:body-cell-unidad="props">
@@ -156,9 +154,17 @@
         </template>
       </q-table>
       </q-card-section>
+    <q-card-section>
+      <q-select v-model="dataLimit" :options="optionsDataLimit" label="Muestras por gráfico" @update:model-value="handleUpdateDataLimit"/>
+    </q-card-section>
+      <q-card-section style="overflow: hidden;" v-if="medicionesEstacion && chartData && chartOptions && medicionesEstacion.length > 0">
+        <LineChart
+  :chartData="convertChartDataToPlotly(chartData)"
+  :chartOptions="chartOptions"
+  v-if="medicionesEstacion && chartData && chartOptions && medicionesEstacion.length > 0"
+/>
 
-      <q-card-section style="height: 40vh; overflow: hidden;" v-if="medicionesEstacion && chartData && chartOptions && medicionesEstacion.length > 0">
-        <LineChart :chartData="chartData" :chartOptions="chartOptions" v-if="medicionesEstacion && chartData && chartOptions && medicionesEstacion.length > 0"/>
+
       </q-card-section>
 
       <q-separator />
@@ -166,10 +172,7 @@
 
       <!-- Botón de cerrar -->
       <q-card-actions align="right">
-        <q-btn flat label="Cerrar" color="primary" v-close-popup  @click="()=>{
-          dialogVisible = false
-
-        }" />
+        <q-btn flat label="Cerrar" color="primary" v-close-popup  @click="()=>handleCloseDialog()" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -178,7 +181,7 @@
 
 
 <script setup lang="ts">
-import { ref, onMounted,inject, computed, watch } from 'vue';
+import { ref, onMounted,inject, computed, watch,onUnmounted } from 'vue';
 import { api } from 'src/boot/axios';
 
 import mypoints from 'src/assets/mypoints.json';
@@ -191,7 +194,7 @@ import VectorSource from 'ol/source/Vector';
 import { TEstacion } from 'src/components/models';
 
 import LineChart from 'src/components/LineChart.vue' // Ajusta la ruta según tu estructura
-
+import { io, Socket } from "socket.io-client";
 
 export interface TPatientInput {
   _id: string;
@@ -239,6 +242,24 @@ const showDialog = ref(false);
 const dialogVisible = ref(false);
 
 const showLinkDialog = ref(false);
+const convertChartDataToPlotly = (chartData: any): Partial<Plotly.PlotData>[] => {
+  if (!chartData || !chartData.datasets) return [];
+
+  return chartData.datasets.map((dataset: any) => ({
+    x: chartData.labels, // Etiquetas en el eje X
+    y: dataset.data, // Valores en el eje Y
+    type: 'scatter', // Tipo de gráfico (línea)
+    mode: 'lines+markers', // Muestra tanto la línea como los puntos
+    name: dataset.label, // Nombre del dataset (ej. 'Ventas')
+    line: { color: dataset.borderColor }, // Color de la línea
+    hoverinfo: 'x+y', // Mostrar tanto el valor de X como el de Y
+    hoverlabel: {
+      bgcolor: 'rgba(0,0,0,0.7)', // Fondo del texto del hover
+      font: { color: 'white' }, // Color del texto del hover
+    },
+  }));
+};
+
 
 
 const isEditing = ref(false);
@@ -304,41 +325,35 @@ const chartData = ref({
   ]
 })
 
-const chartOptions = ref({
+const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  scales: {
-    x: {
-      title: {
-        display: true,
-        text: 'Fecha'
-      }
+  title: {
+    text: "Mediciones",
+    display: true,
+  },
+  layout: {
+    xaxis: {
+      title: 'X',
+      showgrid: true,
+      zeroline: true,
+      display: true,
+      tickangle: -45, // Rotar las etiquetas del eje X para que se vean mejor
+      tickvals: chartData.value.labels.filter((_, index) => index % 5 === 0), // Mostrar solo una cada dos etiquetas
+      ticktext: chartData.value.labels.filter((_, index) => index % 5 === 0), // Mostrar solo una cada dos etiquetas
     },
-    y: {
-      title: {
-        display: true,
-        text: 'Valor'
-      }
-    }
-  }
-})
+    yaxis: {
+      title: 'Y',
+      showgrid: true,
+      zeroline: false,
+    },
+  },
+  hovermode: 'x', // Modo de hover para mostrar solo la información más cercana
+};
+
 
 const medicionesEstacion2 = ref<{ fecha: string, valor: number }[]>([])
 
-// Función para consultar mediciones (simulación)
-const consultarMediciones2 = () => {
-  // Aquí se deben obtener los datos del backend según la variable seleccionada
-  // Ejemplo de datos:
-  medicionesEstacion2.value = [
-    { fecha: '2025-01-01', valor: 30 },
-    { fecha: '2025-01-01', valor: 30 },
-    { fecha: '2025-01-01', valor: 30 },
-    { fecha: '2025-01-02', valor: 25 },
-    { fecha: '2025-01-03', valor: 35 },
-    { fecha: '2025-01-03', valor: 34 },
-    { fecha: '2025-01-03', valor: 95 },
-  ]
-}
 
 // Actualiza los datos del gráfico en función de las mediciones obtenidas
 const actualizarGrafico = () => {
@@ -379,7 +394,24 @@ const geoJson = new format.GeoJSON();
 
 const selectConditions = inject("ol-selectconditions");
 
-const selectCondition = selectConditions.singleClick;;
+const selectCondition = selectConditions.singleClick;
+
+// const socket: Socket = io("http://192.168.2.7:3000", {
+//   autoConnect: false, // No conectar automáticamente, lo haremos manualmente
+//   //query: {customId:crypto.randomUUID()}
+//   query: {customId:"bf6be07f-21f7-4a9b-92cb-e4a3ea802639"}
+// }
+// );
+
+const socketMap : Socket = io("http://192.168.2.7:3000", {
+  autoConnect: true, // No conectar automáticamente, lo haremos manualmente
+  query: {customId: "map_socket"}
+  //query: {customId: "Map_"+crypto.randomUUID()}
+}
+);
+
+const socketStation = ref<Socket | null>(null);
+
 
 const featureSelected = (event:any) => {
   console.log("featureSelected "+Math.random());
@@ -389,6 +421,20 @@ const featureSelected = (event:any) => {
     console.log("Feature seleccionado:", selectedFeature.get("name"));
     dialogVisible.value=true
     estacionSelected.value = estacionesData.value.find((estacion) => estacion.numero_serie === selectedFeature.get("name"));
+
+    socketStation.value= io("http://192.168.2.7:3000", {
+      autoConnect: true,
+      // query: {customId:crypto.randomUUID()}
+      query: {customId:"STA-"+estacionSelected.value.numero_serie}
+    }
+    );
+
+    //socketStation.connect();
+    socketStation.value.on("data_updated", (msg: string) => {
+      console.log("Mensaje recibido para sta:", msg);
+      consultarMediciones();
+    });
+
   }
   else
   {
@@ -417,6 +463,17 @@ const markersLength = ref(0);
 
 const estacionesFeatures = ref<Feature<Geometry>[]>([]);
 
+const dataLimit = ref({ label: '20', value: 20 });
+
+const optionsDataLimit = ref([
+  { label: '10', value: 10 },
+  { label: '20', value: 20 },
+  { label: '30', value: 30 },
+  { label: '40', value: 40 },
+  { label: '50', value: 50 },
+]);
+
+
 
 function log(type: string, event: ContextMenuEvent) {
   console.log(type, event);
@@ -424,6 +481,12 @@ function log(type: string, event: ContextMenuEvent) {
 
 ////////////////////////
 
+const handleCloseDialog = () => {
+  dialogVisible.value = false;
+  estacionSelected.value = null;
+  socketStation.value?.disconnect();
+  socketStation.value=null;
+};
 
 const updateInputValue = (value: string) => {
 
@@ -438,10 +501,10 @@ const consultarMediciones=()=>{
   console.log('consultarMediciones...')
   console.log('selectedVariable.value')
   console.log(selectedVariable.value)
-  console.log('selectedVariable.label')
-  console.log(selectedVariable.label)
+  console.log('selectedVariable.value.label')
+  console.log(selectedVariable.value.label)
   if(estacionSelected.value){
-    api.get(`/medicion/getbyestacionytipo/${estacionSelected.value?.numero_serie}?tipo=${selectedVariable.value}`).then((response) => {
+    api.get(`/medicion/getbyestacionytipo/${estacionSelected.value?.numero_serie}?tipo=${selectedVariable.value.value}&limit=${dataLimit.value.value}`).then((response) => {
       console.log('Mediciones loaded:', response.data);
       medicionesEstacion.value = response.data.data;
 
@@ -490,8 +553,27 @@ const loadEstaciones = () => {
   });
 };
 
+
+
+const handleUpdateDataLimit = () => {
+  console.log('handleUpdateDataLimit...');
+  consultarMediciones();
+};
+
 onMounted(() => {
   loadEstaciones();
+
+  socketMap.on("update_map", (msg: string) => {
+    console.log("Mensaje recibido:", msg);
+    loadEstaciones();
+  });
+
+
+
+});
+
+onUnmounted(() => {
+  socketMap.disconnect();
 });
 
 
