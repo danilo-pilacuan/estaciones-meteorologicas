@@ -5,23 +5,22 @@
         <!-- Instrucciones -->
         <div class="instructions-box q-mb-md">
 
-          📍 <strong>Interacción con el mapa:</strong> Seleccione un marcador para ver la información detallada de la estación meteorológica.
+          📍 <strong>Interacción con el mapa:</strong> Seleccione un marcador para ver la información detallada de la
+          estación meteorológica.
         </div>
 
         <ol-map ref="map" :loadTilesWhileAnimating="true" :loadTilesWhileInteracting="true"
           style="height: 700px; width: 100%;">
 
-          <ol-view :center="center" :zoom="zoom" :projection="projection" ref="view" :maxZoom="18" /> <!-- Limitar el zoom máximo -->
+          <ol-view :center="center" :zoom="zoom" :projection="projection" ref="view" :maxZoom="18" />
+          <!-- Limitar el zoom máximo -->
 
           <ol-tile-layer>
             <ol-source-osm />
           </ol-tile-layer>
 
-          <ol-interaction-select
-            @select="featureSelected"
-            :condition="selectCondition"
-            :filter="selectInteactionFilter"
-          >
+          <ol-interaction-select @select="featureSelected" :condition="selectCondition"
+            :filter="selectInteactionFilter">
             <ol-style>
 
               <!-- <ol-style-fill color="rgba(255,255,255,0.5)"></ol-style-fill> -->
@@ -33,11 +32,8 @@
 
 
           <ol-vector-layer>
-            <ol-source-vector ref="markers"
-              :features="estacionesFeatures"
-              :format="geoJson"
-              :projection="projection"
-            > </ol-source-vector>
+            <ol-source-vector ref="markers" :features="estacionesFeatures" :format="geoJson" :projection="projection">
+            </ol-source-vector>
             <!-- <ol-source-vector
               ref="cities"
               url="https://raw.githubusercontent.com/alpers/Turkey-Maps-GeoJSON/master/tr-cities-airports.json"
@@ -60,128 +56,114 @@
     </div>
     <q-dialog v-model="dialogVisible" persistent>
       <q-card class="q-pa-md" style="width: 90vw; height: 90vh; max-width: 90vw; max-height: 90vh;">
-      <!-- Título -->
-      <q-card-section class="bg-primary text-white">
-        <div class="text-h6">
-           Estación Seleccionada: {{ estacionSelected?.numero_serie }}
-        </div>
-      </q-card-section>
-      <q-separator />
-      <!-- Propiedades en formato compacto -->
-      <q-card-section>
-        <div class="row q-col-gutter-sm">
-          <div class="col-3">
-            <q-item>
-              <q-item-section>
-                <q-item-label class="text-weight-bold">Modelo</q-item-label>
-                <q-item-label caption>{{ estacionSelected?.modelo }}</q-item-label>
-              </q-item-section>
-            </q-item>
+        <!-- Título -->
+        <q-card-section class="bg-primary text-white">
+          <div class="text-h6">
+            Estación Seleccionada: {{ estacionSelected?.numero_serie }}
           </div>
+        </q-card-section>
+        <q-separator />
+        <!-- Propiedades en formato compacto -->
+        <q-card-section>
+          <div class="row q-col-gutter-sm">
+            <div class="col-3">
+              <q-item>
+                <q-item-section>
+                  <q-item-label class="text-weight-bold">Modelo</q-item-label>
+                  <q-item-label caption>{{ estacionSelected?.modelo }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </div>
 
-          <div class="col-3">
-            <q-item>
-              <q-item-section>
-                <q-item-label class="text-weight-bold">Descripción</q-item-label>
-                <q-item-label caption>{{ estacionSelected?.descripcion }}</q-item-label>
-              </q-item-section>
-            </q-item>
+            <div class="col-3">
+              <q-item>
+                <q-item-section>
+                  <q-item-label class="text-weight-bold">Descripción</q-item-label>
+                  <q-item-label caption>{{ estacionSelected?.descripcion }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </div>
+
+            <div class="col-3">
+              <q-item>
+                <q-item-section>
+                  <q-item-label class="text-weight-bold">Ubicación</q-item-label>
+                  <q-item-label caption>
+                    Lat: {{ estacionSelected?.latitud }} | Lon: {{ estacionSelected?.longitud }}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </div>
+
+            <div class="col-3">
+              <q-item>
+                <q-item-section>
+                  <q-item-label class="text-weight-bold">Estado</q-item-label>
+                  <q-item-label>
+                    <q-badge :color="getEstadoColor(estacionSelected?.estado)">
+                      {{ getEstadoTexto(estacionSelected?.estado) }}
+                    </q-badge>
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </div>
           </div>
+        </q-card-section>
+        <q-separator />
 
-          <div class="col-3">
-            <q-item>
-              <q-item-section>
-                <q-item-label class="text-weight-bold">Ubicación</q-item-label>
-                <q-item-label caption>
-                  Lat: {{ estacionSelected?.latitud }} | Lon: {{ estacionSelected?.longitud }}
-                </q-item-label>
-              </q-item-section>
-            </q-item>
-          </div>
+        <!-- Selector de Variable Destacado -->
+        <q-card-section class="q-mb-md">
+          <div class="text-subtitle1 text-weight-bold q-mb-sm">📊 Seleccionar Variable:</div>
+          <q-select v-model="selectedVariable" :options="variablesSelectArray" label="Elija una opción"
+            @update:model-value="consultarMediciones" />
 
-          <div class="col-3">
-            <q-item>
-              <q-item-section>
-                <q-item-label class="text-weight-bold">Estado</q-item-label>
-                <q-item-label>
-                  <q-badge :color="getEstadoColor(estacionSelected?.estado)">
-                    {{ getEstadoTexto(estacionSelected?.estado) }}
-                  </q-badge>
-                </q-item-label>
-              </q-item-section>
-            </q-item>
-          </div>
-        </div>
-      </q-card-section>
-      <q-separator />
+        </q-card-section>
 
-<!-- Selector de Variable Destacado -->
-<q-card-section class="q-mb-md">
-  <div class="text-subtitle1 text-weight-bold q-mb-sm">📊 Seleccionar Variable:</div>
-  <q-select
-    v-model="selectedVariable"
-    :options="variablesSelectArray"
-    label="Elija una opción"
-    @update:model-value="consultarMediciones"
-  />
-
-</q-card-section>
-
-<q-separator />
-      <!-- Tabla de datos aleatorios -->
-      <q-card-section>
-        <q-table
-        v-if="medicionesEstacion && medicionesEstacion.length > 0"
-        :rows="medicionesEstacion"
-        :columns="columnas"
-        row-key="id"
-        dense
-        separator="horizontal"
-        flat
-        :rows-per-page-options="[10,20, 30, 40]"
-
-      >
-      <template v-slot:body-cell-unidad="props">
-        <td>{{ props.row.tipo_medicion?.unidad?props.row.tipo_medicion.unidad.descripcion:"U"}}</td>
-      </template>
-        <template v-slot:top>
-          <div v-if="medicionesEstacion.length === 0" class="q-pa-md text-center">
-            <q-banner>
-              <q-icon name="info" />
-              <span>Primero seleccione la variable de la cual visualizar los datos</span>
-            </q-banner>
-          </div>
-        </template>
-      </q-table>
-      </q-card-section>
-    <q-card-section>
-      <q-select v-model="dataLimit" :options="optionsDataLimit" label="Muestras por gráfico" @update:model-value="handleUpdateDataLimit"/>
-    </q-card-section>
-      <q-card-section style="overflow: hidden;" v-if="medicionesEstacion && chartData && chartOptions && medicionesEstacion.length > 0">
-        <LineChart
-  :chartData="convertChartDataToPlotly(chartData)"
-  :chartOptions="chartOptions"
-  v-if="medicionesEstacion && chartData && chartOptions && medicionesEstacion.length > 0"
-/>
+        <q-separator />
+        <!-- Tabla de datos aleatorios -->
+        <q-card-section>
+          <q-table v-if="medicionesEstacion && medicionesEstacion.length > 0" :rows="medicionesEstacion"
+            :columns="columnas" row-key="id" dense separator="horizontal" flat :rows-per-page-options="[10, 20, 30, 40]">
+            <template v-slot:body-cell-unidad="props">
+              <td>{{ props.row.tipo_medicion?.unidad ? props.row.tipo_medicion.unidad.descripcion : "U" }}</td>
+            </template>
+            <template v-slot:top>
+              <div v-if="medicionesEstacion.length === 0" class="q-pa-md text-center">
+                <q-banner>
+                  <q-icon name="info" />
+                  <span>Primero seleccione la variable de la cual visualizar los datos</span>
+                </q-banner>
+              </div>
+            </template>
+          </q-table>
+        </q-card-section>
+        <q-card-section>
+          <q-select v-model="dataLimit" :options="optionsDataLimit" label="Muestras por gráfico"
+            @update:model-value="handleUpdateDataLimit" />
+        </q-card-section>
+        <q-card-section style="overflow: hidden;"
+          v-if="medicionesEstacion && chartData && chartOptions && medicionesEstacion.length > 0">
+          <LineChart :chartData="convertChartDataToPlotly(chartData)" :chartOptions="chartOptions"
+            v-if="medicionesEstacion && chartData && chartOptions && medicionesEstacion.length > 0" />
 
 
-      </q-card-section>
+        </q-card-section>
 
-      <q-separator />
+        <q-separator />
 
 
-      <!-- Botón de cerrar -->
-      <q-card-actions align="right">
-        <q-btn flat label="Cerrar" color="primary" v-close-popup  @click="()=>handleCloseDialog()" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+        <!-- Botón de cerrar -->
+        <q-card-actions align="right">
+          <q-btn flat label="Cerrar" color="primary" v-close-popup @click="()=>handleCloseDialog()" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 
 <script setup lang="ts">
-import { ref, onMounted,inject, computed, watch,onUnmounted } from 'vue';
+import { ref, onMounted, inject, computed, watch, onUnmounted } from 'vue';
 import { api } from 'src/boot/axios';
 
 import mypoints from 'src/assets/mypoints.json';
@@ -193,7 +175,7 @@ import { Geometry, Point } from 'ol/geom';
 import VectorSource from 'ol/source/Vector';
 import { TEstacion } from 'src/components/models';
 
-import LineChart from 'src/components/LineChart.vue' // Ajusta la ruta según tu estructura
+import LineChart from 'src/components/LineChart.vue'
 import { io, Socket } from "socket.io-client";
 
 export interface TPatientInput {
@@ -207,34 +189,34 @@ export interface TPatientInput {
   createdAt: Date;
 }
 
- const estacionSelected = ref<TEstacion|null>(
-//{
-//   id: 0,
-//   numero_serie: "string",
-//   modelo: "string",
-//   descripcion: "string",
-//   latitud: "string",
-//   longitud: "string",
-//   variablesSelectArray: "string",
-//   estado: "string",
-//   informacion_adicional: "string",
-//   created_at: new Date(),
-//   updated_at: new Date()
-// }
+const estacionSelected = ref<TEstacion | null>(
+  //{
+  //   id: 0,
+  //   numero_serie: "string",
+  //   modelo: "string",
+  //   descripcion: "string",
+  //   latitud: "string",
+  //   longitud: "string",
+  //   variablesSelectArray: "string",
+  //   estado: "string",
+  //   informacion_adicional: "string",
+  //   created_at: new Date(),
+  //   updated_at: new Date()
+  // }
 )
 
 // Opciones del select
 const variablesSelectArray = ref([
-  { label:"Velocidad Viento",value:1},
-  { label:"Radiación",value:2},
-  { label:"Humedad Relativa",value:3},
-  { label:"Presión",value:4},
-  { label:"Temperatura",value:5},
-  { label:"Altitud",value:6},
-  { label:"Calidad Aire",value:7}
+  { label: "Velocidad Viento", valor: 1 },
+  { label: "Radiación", valor: 2 },
+  { label: "Humedad Relativa", valor: 3 },
+  { label: "Presión", valor: 4 },
+  { label: "Temperatura", valor: 5 },
+  { label: "Altitud", valor: 6 },
+  { label: "Calidad Aire", valor: 7 }
 ]);
 
-const selectedVariable = ref(null);
+const selectedVariable = ref<any>(null);
 const inputValue = ref('');
 
 const showDialog = ref(false);
@@ -286,7 +268,7 @@ interface Medicion {
 const medicionesEstacion = ref<Medicion[]>([]);
 
 
-const getEstadoTexto = (estado:any) => {
+const getEstadoTexto = (estado: any) => {
   switch (estado) {
     case 1: return "Activa";
     case 2: return "Inactiva";
@@ -296,7 +278,7 @@ const getEstadoTexto = (estado:any) => {
 };
 
 // Función para obtener el color del estado
-const getEstadoColor = (estado:any) => {
+const getEstadoColor = (estado: any) => {
   switch (estado) {
     case 1: return "green";
     case 2: return "red";
@@ -362,7 +344,9 @@ const actualizarGrafico = () => {
   console.log(medicionesEstacion.value)
 
   chartData.value.labels = medicionesEstacion.value.map(m => m.created_at);
-  chartData.value.datasets[0].data = medicionesEstacion.value ? medicionesEstacion.value.map(m => m.valor) : [];
+  if (chartData.value.datasets[0]) {
+    chartData.value.datasets[0].data = (medicionesEstacion.value ?? []).map(m => m.valor);
+  }
 
   console.log("chartData.value.labels !!!!!!!!!!")
 
@@ -403,9 +387,9 @@ const selectCondition = selectConditions.singleClick;
 // }
 // );
 
-const socketMap : Socket = io("http://192.168.2.7:3000", {
+const socketMap: Socket = io("http://192.168.2.7:3000", {
   autoConnect: true, // No conectar automáticamente, lo haremos manualmente
-  query: {customId: "map_socket"}
+  query: { customId: "map_socket" }
   //query: {customId: "Map_"+crypto.randomUUID()}
 }
 );
@@ -413,19 +397,19 @@ const socketMap : Socket = io("http://192.168.2.7:3000", {
 const socketStation = ref<Socket | null>(null);
 
 
-const featureSelected = (event:any) => {
-  console.log("featureSelected "+Math.random());
+const featureSelected = (event: any) => {
+  console.log("featureSelected " + Math.random());
   const selectedFeature = event.selected[0]; // Tomar el primer feature seleccionado
 
   if (selectedFeature) {
     console.log("Feature seleccionado:", selectedFeature.get("name"));
-    dialogVisible.value=true
+    dialogVisible.value = true
     estacionSelected.value = estacionesData.value.find((estacion) => estacion.numero_serie === selectedFeature.get("name"));
 
-    socketStation.value= io("http://192.168.2.7:3000", {
+    socketStation.value = io("http://192.168.2.7:3000", {
       autoConnect: true,
       // query: {customId:crypto.randomUUID()}
-      query: {customId:"STA-"+estacionSelected.value.numero_serie}
+      query: { customId: "STA-" + (estacionSelected.value?.numero_serie ?? "unknown") }
     }
     );
 
@@ -436,18 +420,17 @@ const featureSelected = (event:any) => {
     });
 
   }
-  else
-  {
-  estacionSelected.value=null;
+  else {
+    estacionSelected.value = null;
   }
 };
 
-const selectInteactionFilter = (feature:any) => {
+const selectInteactionFilter = (feature: any) => {
   return feature.values_.name != undefined;
 };
 
 const contextMenuItems = ref<Item[]>([]);
-const center = ref([-78.504804,-0.197954]);
+const center = ref([-78.504804, -0.197954]);
 const circleCenter = ref([0, 0]);
 const projection = ref('EPSG:4326');
 const zoom = ref(15);
@@ -484,6 +467,10 @@ function log(type: string, event: ContextMenuEvent) {
 const handleCloseDialog = () => {
   dialogVisible.value = false;
   estacionSelected.value = null;
+  chartData.value.labels = [];
+  chartData.value.datasets[0].data = [];
+  medicionesEstacion.value = [];
+  selectedVariable.value = null;
   socketStation.value?.disconnect();
   socketStation.value=null;
 };
@@ -502,9 +489,10 @@ const consultarMediciones=()=>{
   console.log('selectedVariable.value')
   console.log(selectedVariable.value)
   console.log('selectedVariable.value.label')
-  console.log(selectedVariable.value.label)
+  //console.log(selectedVariable.value.label)
+  const valorSelec=selectedVariable.value?selectedVariable.value.valor:0
   if(estacionSelected.value){
-    api.get(`/medicion/getbyestacionytipo/${estacionSelected.value?.numero_serie}?tipo=${selectedVariable.value.value}&limit=${dataLimit.value.value}`).then((response) => {
+    api.get(`/medicion/getbyestacionytipo/${estacionSelected.value?.numero_serie}?tipo=${valorSelec}&limit=${dataLimit.value.value}`).then((response) => {
       console.log('Mediciones loaded:', response.data);
       medicionesEstacion.value = response.data.data;
 

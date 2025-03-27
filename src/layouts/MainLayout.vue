@@ -1,31 +1,41 @@
 <template>
   <q-layout view="hHh Lpr lFf">
-    <q-header elevated>
-      <q-toolbar>
+    <!-- Header con estilo de gradiente y más espaciado -->
+    <q-header elevated class="bg-gradient-to-r text-white shadow-md">
+      <q-toolbar class="bg-gradient-to-r text-white">
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
-        <q-toolbar-title>
+        <q-toolbar-title class="text-h5 q-pl-md">
           Consola de Visualización Meteorológica
         </q-toolbar-title>
 
-          <q-btn flat dense icon-right="account_circle" :label="(authStore.user ? '('+authStore.user.nombre +')'+ ' ' : '') + 'Cerrar Sesión'"
+        <q-btn
+          flat
+          dense
+          icon-right="account_circle"
+          :label="(authStore.user ? '('+authStore.user.nombre +')'+ ' ' : '') + 'Cerrar Sesión'"
           aria-label="Cerrar sesión"
-          class="q-mx-md"
-          @click="cerrarSesion" />
-
+          class="q-mx-md text-white"
+          @click="cerrarSesion"
+        />
       </q-toolbar>
     </q-header>
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-      <q-list>
-        <q-item-label header>
-          Opciones
-        </q-item-label>
-        <div v-for="link in essentialLinks" :key="link.title">
-          <EssentialLink v-bind="link"  v-if="link.visible" />
-        </div>
 
+    <!-- Drawer mejorado con íconos y separación -->
+    <q-drawer v-model="leftDrawerOpen" show-if-above bordered class="bg-grey-2">
+      <q-list padding>
+        <q-item-label header class="text-grey-9 q-mt-sm">
+          Opciones del Sistema
+        </q-item-label>
+        <q-separator spaced />
+
+        <div v-for="link in essentialLinks" :key="link.title">
+          <EssentialLink v-bind="link" v-if="link.visible" />
+        </div>
       </q-list>
     </q-drawer>
-    <q-page-container>
+
+    <!-- Contenedor de la página -->
+    <q-page-container class="bg-grey-1">
       <router-view />
     </q-page-container>
   </q-layout>
@@ -37,8 +47,7 @@ import EssentialLink, { EssentialLinkProps } from 'components/EssentialLink.vue'
 import { useAuthStore } from 'src/stores/auth-store';
 import { useRouter } from 'vue-router';
 
-
-const router = useRouter()
+const router = useRouter();
 const authStore = useAuthStore(); // Obtén la instancia del store de autenticación
 
 const essentialLinks: EssentialLinkProps[] = [
@@ -47,53 +56,60 @@ const essentialLinks: EssentialLinkProps[] = [
     caption: 'Página de inicio del sistema',
     icon: 'home',
     link: '/',
-    visible:true
+    visible: true
   },
   {
     title: 'Visor',
     caption: 'Permite visualizar los valores meteorológicos de las estaciones registradas',
     icon: 'travel_explore',
     link: '/visor',
-    visible:true
+    visible: true
+  },
+  {
+    title: 'Informes',
+    caption: 'Visualizar informes diarios',
+    icon: 'summarize',
+    link: '/informes',
+    visible: true
   },
   {
     title: 'Estaciones',
     caption: 'Permite administrar las estaciones de la red',
     icon: 'satellite_alt',
-    link: '/stations',
-    visible:authStore.user?.rol.id === 1
+    link: '/estaciones',
+    visible: authStore.user?.rol.id === 1
   },
   {
     title: 'Usuarios',
     caption: 'Permite administrar los usuarios del sistema',
     icon: 'people',
-    link: '/users',
-    visible:authStore.user?.rol.id === 1
+    link: '/usuarios',
+    visible: authStore.user?.rol.id === 1
   },
   {
     title: 'Ayuda',
     caption: 'Información de uso del sistema',
     icon: 'help',
-    link: '/help',
-    visible:true
+    link: '/ayuda',
+    visible: true
   }
 ];
 
-const leftDrawerOpen = ref(false)
+const leftDrawerOpen = ref(false);
 
 function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value
+  leftDrawerOpen.value = !leftDrawerOpen.value;
 }
-
-//Methods
 
 const cerrarSesion = () => {
-  console.log('cerrar sesion')
-  authStore.logout()
+  console.log('cerrar sesion');
+  authStore.logout();
   router.push('/login');
-}
-// const mostrarNotificaciones = () => {
-//   console.log('mostrar notificaciones')
-// }
-
+};
 </script>
+<style>
+.bg-gradient-to-r {
+  background: linear-gradient(to left, #2196F3, #673AB7);
+}
+
+</style>

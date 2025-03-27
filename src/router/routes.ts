@@ -11,11 +11,22 @@ const routes: RouteRecordRaw[] = [
       { path: 'visor', component: () => import('pages/VisorPage.vue')
         ,meta: { requiresAuth: true },
       },
-      { path: 'users', component: () => import('pages/UsersPage.vue')
+      { path: 'usuarios', component: () => import('pages/UsersPage.vue')
         ,meta: { requiresAuth: true },
       },
-      { path: 'stations', component: () => import('pages/StationsPage.vue')
+      { path: 'estaciones', component: () => import('pages/StationsPage.vue')
         ,meta: { requiresAuth: true },
+      },
+      { path: 'informes', component: () => import('pages/ReportsPage.vue')
+        ,meta: { requiresAuth: true },
+      },
+      { path: 'ayuda', component: () => import('pages/HelpPage.vue')
+        ,meta: { requiresAuth: true },
+      },
+      {
+        path: '/informe',
+        name: 'informe',
+        component: () => import('src/pages/ReportDetailPage.vue'),
       }
     ],
   },

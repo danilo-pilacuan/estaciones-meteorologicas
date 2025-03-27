@@ -16,7 +16,7 @@ export interface TEstacion {
   latitud:string;
   longitud:string;
   variables:string;
-  estado:string;
+  estado:number;
   informacion_adicional:string;
   created_at:Date;
   updated_at:Date;

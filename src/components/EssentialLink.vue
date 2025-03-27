@@ -17,6 +17,7 @@ export interface EssentialLinkProps {
   caption?: string;
   link?: string;
   icon?: string;
+  visible?: boolean;
 }
 import { useRouter } from 'vue-router';
 
